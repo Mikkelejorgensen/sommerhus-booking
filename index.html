@@ -9,7 +9,23 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
+    <script>
+      // Suppress production warnings for demo purposes
+      if (window.console && console.warn) {
+        const originalWarn = console.warn;
+        console.warn = function(...args) {
+          const message = args[0];
+          if (message && message.includes && (
+            message.includes('should not be used in production') ||
+            message.includes('precompile your scripts for production')
+          )) {
+            return;
+          }
+          originalWarn.apply(console, args);
+        };
+      }
+    </script>
 </head>
 <body>
     <div id="root"></div>

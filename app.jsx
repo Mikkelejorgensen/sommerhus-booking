@@ -219,7 +219,7 @@ const SommerhusBooking = () => {
       try {
         await window.emailjs.send(
           EMAIL_CONFIG.SERVICE_ID,
-          EMAIL_CONFIG.TEMPLATE_ID
+          EMAIL_CONFIG.TEMPLATE_ID,
           {
             to_name: booking.name,
             from_name: 'Ulla og Eric',
@@ -248,7 +248,7 @@ const SommerhusBooking = () => {
       try {
         await window.emailjs.send(
           EMAIL_CONFIG.SERVICE_ID,
-          EMAIL_CONFIG.TEMPLATE_ID
+          EMAIL_CONFIG.TEMPLATE_ID,
           {
             to_name: booking.name,
             from_name: 'Ulla og Eric',

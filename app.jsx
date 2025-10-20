@@ -131,9 +131,6 @@ const SommerhusBooking = () => {
   const handleBooking = async (e) => {
     e.preventDefault();
     
-    console.log('📧 EmailJS loaded:', emailJsLoaded);
-    console.log('📧 Window.emailjs:', window.emailjs);
-    
     const days = calculateDays(selectedDates.start, selectedDates.end);
     const needsApproval = days > 14;
     
@@ -150,9 +147,7 @@ const SommerhusBooking = () => {
       status: needsApproval ? 'pending' : 'confirmed'
     };
 
-    console.log('📧 Forsøger at sende email...');
     const emailSent = await sendEmailNotification(newBooking, needsApproval);
-    console.log('📧 Email sendt:', emailSent);
 
     setBookings([...bookings, newBooking]);
     
@@ -166,8 +161,8 @@ const SommerhusBooking = () => {
         : 'Din booking er bekræftet! Ulla og Eric har modtaget en email. Husk at uploade flybilletter inden 14 dage.');
     } else {
       alert(needsApproval 
-        ? 'Din booking er sendt til godkendelse hos Ulla og Eric! (Email kunne ikke sendes - kontakt dem venligst manuelt)'
-        : 'Din booking er bekræftet! (Email kunne ikke sendes - kontakt Ulla og Eric venligst manuelt). Husk at uploade flybilletter inden 14 dage.');
+        ? 'Din booking er sendt til godkendelse hos Ulla og Eric!'
+        : 'Din booking er bekræftet! Husk at uploade flybilletter inden 14 dage.');
     }
   };
 
@@ -215,7 +210,7 @@ const SommerhusBooking = () => {
       }
     }
     
-    alert('Booking godkendt! Der er sendt en email til den der bookede.');
+    alert('Booking godkendt!');
   };
 
   const rejectBooking = async (bookingId) => {
@@ -245,7 +240,7 @@ const SommerhusBooking = () => {
     }
     
     setBookings(bookings.filter(b => b.id !== bookingId));
-    alert('Booking afvist og slettet. Der er sendt en email til den der bookede.');
+    alert('Booking afvist og slettet.');
   };
 
   const deleteBooking = (bookingId) => {
@@ -263,7 +258,6 @@ const SommerhusBooking = () => {
       alert('Forkert adgangskode');
     }
   };
-
   const renderCalendar = () => {
     const { daysInMonth, startingDayOfWeek, year, month } = getDaysInMonth(currentDate);
     const days = [];
@@ -564,11 +558,6 @@ const SommerhusBooking = () => {
                 ),
                 React.createElement('div', { className: "flex gap-2 flex-shrink-0" },
                   React.createElement('button', {
-                    onClick: () => approveBooking(booking.id),
-                    className: "px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 whitespace-nowrap"
-                  }, 'Godkend'),
-                  React.createElement('button', {
-                    onClick: () => rejectBooking(booking React.createElement('button', {
                     onClick: () => approveBooking(booking.id),
                     className: "px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 whitespace-nowrap"
                   }, 'Godkend'),

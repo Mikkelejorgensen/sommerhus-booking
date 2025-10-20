@@ -1,5 +1,21 @@
 const { useState, useEffect } = React;
-const { Calendar, Upload, Check, AlertCircle, Mail, Users, Clock, X } = lucide;
+// Check if lucide is loaded and destructure icons safely
+const lucideIcons = window.lucide || {};
+const { Calendar, Upload, Check, AlertCircle, Mail, Users, Clock, X } = lucideIcons;
+
+// Fallback component for missing icons
+const IconFallback = ({ className, children }) =>
+  React.createElement('span', { className: className || 'w-4 h-4 inline-block' }, children || '□');
+
+// Use fallbacks if icons are not loaded
+const SafeCalendar = Calendar || IconFallback;
+const SafeUpload = Upload || IconFallback;
+const SafeCheck = Check || IconFallback;
+const SafeAlertCircle = AlertCircle || IconFallback;
+const SafeMail = Mail || IconFallback;
+const SafeUsers = Users || IconFallback;
+const SafeClock = Clock || IconFallback;
+const SafeX = X || IconFallback;
 
 // EmailJS Configuration
 // To set up email functionality:
@@ -332,9 +348,9 @@ const SommerhusBooking = () => {
             React.createElement('div', { className: "font-medium truncate" }, booking.name),
             React.createElement('div', { className: "text-gray-600" }, booking.guests + ' pers.'),
             React.createElement('div', { className: "flex items-center gap-1 mt-1" },
-              booking.status === 'pending' && React.createElement(Clock, { className: "w-3 h-3" }),
-              booking.status === 'confirmed' && !booking.flightTicketUploaded && React.createElement(AlertCircle, { className: "w-3 h-3" }),
-              booking.flightTicketUploaded && React.createElement(Check, { className: "w-3 h-3" })
+              booking.status === 'pending' && React.createElement(SafeClock, { className: "w-3 h-3" }),
+              booking.status === 'confirmed' && !booking.flightTicketUploaded && React.createElement(SafeAlertCircle, { className: "w-3 h-3" }),
+              booking.flightTicketUploaded && React.createElement(SafeCheck, { className: "w-3 h-3" })
             )
           )
         )
@@ -384,7 +400,7 @@ const SommerhusBooking = () => {
         React.createElement('h1', { className: "text-4xl font-bold text-gray-800 mb-2" }, 'Cerros Del Aguila'),
         React.createElement('p', { className: "text-xl text-gray-600" }, 'Sommerhus Booking System'),
         React.createElement('div', { className: "flex items-center justify-center gap-2 mt-2" },
-          React.createElement(Mail, {
+          React.createElement(SafeMail, {
             className: emailJsLoaded &&
               EMAIL_CONFIG.PUBLIC_KEY !== 'YOUR_PUBLIC_KEY' &&
               EMAIL_CONFIG.SERVICE_ID !== 'YOUR_SERVICE_ID' &&
@@ -444,7 +460,7 @@ const SommerhusBooking = () => {
                 setSelectedDates({ start: null, end: null });
                 setFormData({ name: '', guests: 1, comment: '' });
               }
-            }, React.createElement(X, { className: "w-6 h-6" }))
+            }, React.createElement(SafeX, { className: "w-6 h-6" }))
           ),
           React.createElement('div', { className: "mb-4 p-3 bg-blue-50 rounded" },
             React.createElement('p', { className: "text-sm" },
@@ -512,7 +528,7 @@ const SommerhusBooking = () => {
           React.createElement('div', { className: "flex justify-between items-center mb-4" },
             React.createElement('h3', { className: "text-2xl font-bold" }, 'Booking Detaljer'),
             React.createElement('button', { onClick: () => setSelectedBooking(null) },
-              React.createElement(X, { className: "w-6 h-6" })
+              React.createElement(SafeX, { className: "w-6 h-6" })
             )
           ),
           React.createElement('div', { className: "space-y-3" },
@@ -536,7 +552,7 @@ const SommerhusBooking = () => {
             React.createElement('div', { className: "p-3 bg-gray-50 rounded" },
               React.createElement('p', { className: "text-sm text-gray-600" }, 'Antal personer'),
               React.createElement('p', { className: "text-lg font-semibold flex items-center gap-2" },
-                React.createElement(Users, { className: "w-5 h-5" }),
+                React.createElement(SafeUsers, { className: "w-5 h-5" }),
                 selectedBooking.guests + ' personer'
               )
             ),
@@ -547,13 +563,13 @@ const SommerhusBooking = () => {
             React.createElement('div', { className: "p-3 bg-gray-50 rounded" },
               React.createElement('p', { className: "text-sm text-gray-600 mb-2" }, 'Status'),
               selectedBooking.status === 'pending' ? React.createElement('div', { className: "flex items-center gap-2 text-yellow-600" },
-                React.createElement(Clock, { className: "w-5 h-5" }),
+                React.createElement(SafeClock, { className: "w-5 h-5" }),
                 React.createElement('span', { className: "font-semibold" }, 'Afventer godkendelse')
               ) : selectedBooking.flightTicketUploaded ? React.createElement('div', { className: "flex items-center gap-2 text-green-600" },
-                React.createElement(Check, { className: "w-5 h-5" }),
+                React.createElement(SafeCheck, { className: "w-5 h-5" }),
                 React.createElement('span', { className: "font-semibold" }, 'Bekræftet med flybilletter')
               ) : React.createElement('div', { className: "flex items-center gap-2 text-orange-600" },
-                React.createElement(AlertCircle, { className: "w-5 h-5" }),
+                React.createElement(SafeAlertCircle, { className: "w-5 h-5" }),
                 React.createElement('span', { className: "font-semibold" }, 'Mangler flybilletter')
               )
             ),
@@ -569,7 +585,7 @@ const SommerhusBooking = () => {
                 download: 'flybilletter-' + selectedBooking.name + '-' + new Date(selectedBooking.startDate).toLocaleDateString('da-DK') + '.jpg',
                 className: "inline-flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
               },
-                React.createElement(Upload, { className: "w-4 h-4" }),
+                React.createElement(SafeUpload, { className: "w-4 h-4" }),
                 'Download Flybilletter'
               )
             )
@@ -635,10 +651,10 @@ const SommerhusBooking = () => {
                 booking.comment && React.createElement('p', { className: "text-sm mt-1 italic" }, booking.comment),
                 React.createElement('div', { className: "mt-2" },
                   booking.flightTicketUploaded ? React.createElement('span', { className: "text-sm text-green-600 flex items-center gap-1" },
-                    React.createElement(Check, { className: "w-4 h-4" }),
+                    React.createElement(SafeCheck, { className: "w-4 h-4" }),
                     ' Flybilletter uploadet'
                   ) : React.createElement('span', { className: "text-sm text-orange-600 flex items-center gap-1" },
-                    React.createElement(AlertCircle, { className: "w-4 h-4" }),
+                    React.createElement(SafeAlertCircle, { className: "w-4 h-4" }),
                     ' Mangler flybilletter (deadline: ' + new Date(booking.flightTicketDeadline).toLocaleDateString('da-DK') + ')'
                   )
                 )
@@ -677,7 +693,7 @@ const SommerhusBooking = () => {
                       'Upload flybilletter senest ' + new Date(booking.flightTicketDeadline).toLocaleDateString('da-DK')
                     ),
                     React.createElement('label', { className: "inline-flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded cursor-pointer hover:bg-blue-600" },
-                      React.createElement(Upload, { className: "w-4 h-4" }),
+                      React.createElement(SafeUpload, { className: "w-4 h-4" }),
                       'Upload Flybilletter',
                       React.createElement('input', {
                         type: "file",
@@ -687,7 +703,7 @@ const SommerhusBooking = () => {
                       })
                     )
                   ) : React.createElement('div', { className: "flex items-center gap-2 text-green-600" },
-                    React.createElement(Check, { className: "w-5 h-5" }),
+                    React.createElement(SafeCheck, { className: "w-5 h-5" }),
                     React.createElement('span', null, 'Flybilletter uploadet')
                   )
                 )

@@ -1,6 +1,18 @@
 const { useState, useEffect } = React;
 const { Calendar, Upload, Check, AlertCircle, Mail, Users, Clock, X } = lucide;
 
+// EmailJS Configuration
+// To set up email functionality:
+// 1. Sign up at https://www.emailjs.com/
+// 2. Create a service (Gmail, Outlook, etc.)
+// 3. Create an email template
+// 4. Replace the placeholders below with your actual values
+const EMAIL_CONFIG = {
+  PUBLIC_KEY: 'YOUR_PUBLIC_KEY', // Your EmailJS public key
+  SERVICE_ID: 'YOUR_SERVICE_ID', // Your EmailJS service ID
+  TEMPLATE_ID: 'YOUR_TEMPLATE_ID' // Your EmailJS template ID
+};
+
 const SommerhusBooking = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [bookings, setBookings] = useState([]);
@@ -18,10 +30,18 @@ const SommerhusBooking = () => {
   });
 
   useEffect(() => {
-    if (window.emailjs) {
-      window.emailjs.init('rlukR7FM0JsxgkSR4');
-      setEmailJsLoaded(true);
-    }
+    // Initialize EmailJS when the script loads
+    const initEmailJS = () => {
+      if (window.emailjs) {
+        window.emailjs.init(EMAIL_CONFIG.PUBLIC_KEY);
+        setEmailJsLoaded(true);
+        console.log('EmailJS initialized successfully');
+      } else {
+        // If EmailJS hasn't loaded yet, try again in 100ms
+        setTimeout(initEmailJS, 100);
+      }
+    };
+    initEmailJS();
   }, []);
 
   useEffect(() => {
@@ -38,6 +58,14 @@ const SommerhusBooking = () => {
   const sendEmailNotification = async (booking, needsApproval) => {
     if (!emailJsLoaded || !window.emailjs) {
       console.warn('EmailJS ikke loadet endnu');
+      return false;
+    }
+
+    // Check if EmailJS is properly configured
+    if (EMAIL_CONFIG.PUBLIC_KEY === 'YOUR_PUBLIC_KEY' ||
+        EMAIL_CONFIG.SERVICE_ID === 'YOUR_SERVICE_ID' ||
+        EMAIL_CONFIG.TEMPLATE_ID === 'YOUR_TEMPLATE_ID') {
+      console.warn('EmailJS not configured - please update EMAIL_CONFIG with your actual values');
       return false;
     }
 
@@ -58,8 +86,8 @@ const SommerhusBooking = () => {
 
     try {
       const response = await window.emailjs.send(
-        'Fodbold1',
-        'template_23hcusa',
+        EMAIL_CONFIG.SERVICE_ID,
+        EMAIL_CONFIG.TEMPLATE_ID,
         templateParams
       );
       console.log('Email sendt succesfuldt!', response.status, response.text);
@@ -190,8 +218,8 @@ const SommerhusBooking = () => {
     if (emailJsLoaded && window.emailjs) {
       try {
         await window.emailjs.send(
-          'Fodbold1',
-          'template_23hcusa',
+          EMAIL_CONFIG.SERVICE_ID,
+          EMAIL_CONFIG.TEMPLATE_ID
           {
             to_name: booking.name,
             from_name: 'Ulla og Eric',
@@ -219,8 +247,8 @@ const SommerhusBooking = () => {
     if (emailJsLoaded && window.emailjs) {
       try {
         await window.emailjs.send(
-          'Fodbold1',
-          'template_23hcusa',
+          EMAIL_CONFIG.SERVICE_ID,
+          EMAIL_CONFIG.TEMPLATE_ID
           {
             to_name: booking.name,
             from_name: 'Ulla og Eric',
@@ -356,9 +384,28 @@ const SommerhusBooking = () => {
         React.createElement('h1', { className: "text-4xl font-bold text-gray-800 mb-2" }, 'Cerros Del Aguila'),
         React.createElement('p', { className: "text-xl text-gray-600" }, 'Sommerhus Booking System'),
         React.createElement('div', { className: "flex items-center justify-center gap-2 mt-2" },
-          React.createElement(Mail, { className: "w-4 h-4 text-green-600" }),
-          React.createElement('span', { className: "text-sm text-green-600" },
-            emailJsLoaded ? 'Email-notifikationer aktiveret ✓' : 'Loader email-system...'
+          React.createElement(Mail, {
+            className: emailJsLoaded &&
+              EMAIL_CONFIG.PUBLIC_KEY !== 'YOUR_PUBLIC_KEY' &&
+              EMAIL_CONFIG.SERVICE_ID !== 'YOUR_SERVICE_ID' &&
+              EMAIL_CONFIG.TEMPLATE_ID !== 'YOUR_TEMPLATE_ID'
+              ? "w-4 h-4 text-green-600"
+              : "w-4 h-4 text-orange-600"
+          }),
+          React.createElement('span', {
+            className: emailJsLoaded &&
+              EMAIL_CONFIG.PUBLIC_KEY !== 'YOUR_PUBLIC_KEY' &&
+              EMAIL_CONFIG.SERVICE_ID !== 'YOUR_SERVICE_ID' &&
+              EMAIL_CONFIG.TEMPLATE_ID !== 'YOUR_TEMPLATE_ID'
+              ? "text-sm text-green-600"
+              : "text-sm text-orange-600"
+          },
+            !emailJsLoaded ? 'Loader email-system...' :
+            (EMAIL_CONFIG.PUBLIC_KEY === 'YOUR_PUBLIC_KEY' ||
+             EMAIL_CONFIG.SERVICE_ID === 'YOUR_SERVICE_ID' ||
+             EMAIL_CONFIG.TEMPLATE_ID === 'YOUR_TEMPLATE_ID')
+              ? 'Email kræver konfiguration ⚠️'
+              : 'Email-notifikationer aktiveret ✓'
           )
         ),
         React.createElement('button', {
@@ -663,6 +710,21 @@ const SommerhusBooking = () => {
         React.createElement('p', { className: "mt-4 text-sm text-gray-600" },
           React.createElement('strong', null, 'Admin adgangskode: '),
           'sommerhus2025'
+        ),
+        (EMAIL_CONFIG.PUBLIC_KEY === 'YOUR_PUBLIC_KEY' ||
+         EMAIL_CONFIG.SERVICE_ID === 'YOUR_SERVICE_ID' ||
+         EMAIL_CONFIG.TEMPLATE_ID === 'YOUR_TEMPLATE_ID') &&
+        React.createElement('div', { className: "mt-4 p-4 bg-orange-50 border border-orange-200 rounded-lg" },
+          React.createElement('h4', { className: "font-semibold text-orange-800 mb-2" }, '📧 Email Konfiguration Påkrævet'),
+          React.createElement('p', { className: "text-sm text-orange-700 mb-2" },
+            'For at aktivere email-notifikationer skal du:'
+          ),
+          React.createElement('ol', { className: "text-sm text-orange-700 space-y-1 ml-4" },
+            React.createElement('li', null, '1. Opret en konto på emailjs.com'),
+            React.createElement('li', null, '2. Opret en email service (Gmail, Outlook, etc.)'),
+            React.createElement('li', null, '3. Opret en email template'),
+            React.createElement('li', null, '4. Opdater EMAIL_CONFIG konstanten i app.jsx med dine værdier')
+          )
         )
       )
     )

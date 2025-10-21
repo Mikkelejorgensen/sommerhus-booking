@@ -1,21 +1,26 @@
 const { useState, useEffect } = React;
-// Check if lucide is loaded and destructure icons safely
-const lucideIcons = window.lucide || {};
-const { Calendar, Upload, Check, AlertCircle, Mail, Users, Clock, X } = lucideIcons;
 
-// Fallback component for missing icons
+// Fallback icon component
 const IconFallback = ({ className, children }) =>
   React.createElement('span', { className: className || 'w-4 h-4 inline-block' }, children || '□');
 
-// Use fallbacks if icons are not loaded
-const SafeCalendar = Calendar || IconFallback;
-const SafeUpload = Upload || IconFallback;
-const SafeCheck = Check || IconFallback;
-const SafeAlertCircle = AlertCircle || IconFallback;
-const SafeMail = Mail || IconFallback;
-const SafeUsers = Users || IconFallback;
-const SafeClock = Clock || IconFallback;
-const SafeX = X || IconFallback;
+// Safe icon component that handles lucide icons properly
+const SafeIcon = ({ iconName, className, fallbackText }) => {
+  if (window.lucide && window.lucide[iconName] && typeof window.lucide[iconName] === 'function') {
+    return React.createElement(window.lucide[iconName], { className });
+  }
+  return React.createElement(IconFallback, { className, children: fallbackText });
+};
+
+// Icon wrapper functions
+const SafeCalendar = (props) => React.createElement(SafeIcon, { iconName: 'Calendar', fallbackText: '📅', ...props });
+const SafeUpload = (props) => React.createElement(SafeIcon, { iconName: 'Upload', fallbackText: '⬆️', ...props });
+const SafeCheck = (props) => React.createElement(SafeIcon, { iconName: 'Check', fallbackText: '✓', ...props });
+const SafeAlertCircle = (props) => React.createElement(SafeIcon, { iconName: 'AlertCircle', fallbackText: '⚠️', ...props });
+const SafeMail = (props) => React.createElement(SafeIcon, { iconName: 'Mail', fallbackText: '📧', ...props });
+const SafeUsers = (props) => React.createElement(SafeIcon, { iconName: 'Users', fallbackText: '👥', ...props });
+const SafeClock = (props) => React.createElement(SafeIcon, { iconName: 'Clock', fallbackText: '🕐', ...props });
+const SafeX = (props) => React.createElement(SafeIcon, { iconName: 'X', fallbackText: '✕', ...props });
 
 // EmailJS Configuration
 // To set up email functionality:

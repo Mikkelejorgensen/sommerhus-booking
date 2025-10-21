@@ -3,34 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Cerros Del Aguila - Booking System</title>
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js?v=2"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js?v=2"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js?v=2"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js?v=2"></script>
+    <script src="https://unpkg.com/lucide@latest?v=2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
-      // Suppress production warnings for demo purposes
-      if (window.console && console.warn) {
+      // Suppress all warnings for demo purposes
+      if (window.console) {
         const originalWarn = console.warn;
+        const originalError = console.error;
+
         console.warn = function(...args) {
-          const message = args[0];
-          if (message && message.includes && (
-            message.includes('should not be used in production') ||
-            message.includes('precompile your scripts for production') ||
-            message.includes('line-clamp') ||
-            message.includes('plugins array')
-          )) {
-            return;
+          const message = String(args[0] || '');
+          if (message.includes('should not be used in production') ||
+              message.includes('precompile your scripts') ||
+              message.includes('line-clamp') ||
+              message.includes('plugins array') ||
+              message.includes('tailwindcss.com') ||
+              message.includes('babeljs.io')) {
+            return; // Suppress these warnings
           }
           originalWarn.apply(console, args);
+        };
+
+        // Also suppress some error types
+        console.error = function(...args) {
+          const message = String(args[0] || '');
+          if (message.includes('should not be used in production') ||
+              message.includes('precompile your scripts')) {
+            return; // Suppress these errors
+          }
+          originalError.apply(console, args);
         };
       }
     </script>
 </head>
 <body>
     <div id="root"></div>
-    <script type="text/babel" src="app.jsx"></script>
+    <script type="text/babel" src="app.jsx?v=2"></script>
 </body>
 </html>

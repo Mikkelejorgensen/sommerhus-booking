@@ -1,0 +1,23 @@
+{
+  "name": "sommerhus-booking",
+  "version": "1.0.0",
+  "description": "A React-based booking system for managing summer house reservations.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mikkelejorgensen/sommerhus-booking.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Mikkelejorgensen/sommerhus-booking/issues"
+  },
+  "homepage": "https://github.com/Mikkelejorgensen/sommerhus-booking#readme",
+  "dependencies": {
+    "googleapis": "^164.1.0"
+  }
+}

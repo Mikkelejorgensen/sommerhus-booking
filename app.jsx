@@ -1,5 +1,8 @@
 const { useState, useEffect } = React;
 
+// Google Sheets API URL
+const SHEETS_API_URL = 'https://script.google.com/macros/s/AKfycbyPUoYQuNQIVGxSuO6bK1mHC8PUseyILrT1DUHwV5OtVa29OkUTqwYhUUHhK1ZOU1ZRow/exec';
+
 // Fallback icon component
 const IconFallback = ({ className, children }) =>
   React.createElement('span', { className: className || 'w-4 h-4 inline-block' }, children || '□');
@@ -44,6 +47,8 @@ const SommerhusBooking = () => {
   const [adminPassword, setAdminPassword] = useState('');
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [emailJsLoaded, setEmailJsLoaded] = useState(false);
+  const [loadingBookings, setLoadingBookings] = useState(true);
+  const [apiError, setApiError] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -66,16 +71,114 @@ const SommerhusBooking = () => {
     initEmailJS();
   }, []);
 
-  useEffect(() => {
-    const saved = localStorage.getItem('sommerhusBookings');
-    if (saved) {
-      setBookings(JSON.parse(saved));
+  // API helper functions
+  const loadBookingsFromAPI = async () => {
+    try {
+      setLoadingBookings(true);
+      setApiError(null);
+
+      const response = await fetch(SHEETS_API_URL);
+      if (!response.ok) {
+        throw new Error('Kunne ikke hente bookinger fra serveren');
+      }
+
+      const apiBookings = await response.json();
+
+      // Merge with flight ticket data from localStorage
+      const flightTicketData = JSON.parse(localStorage.getItem('flightTicketData') || '{}');
+
+      const mergedBookings = apiBookings.map(booking => ({
+        ...booking,
+        flightTicketImage: flightTicketData[booking.id]?.flightTicketImage || null,
+        flightTicketUploaded: !!flightTicketData[booking.id]?.flightTicketImage
+      }));
+
+      setBookings(mergedBookings);
+    } catch (error) {
+      console.error('Fejl ved indlæsning af bookinger:', error);
+      setApiError('Kunne ikke indlæse bookinger. Prøv at genindlæse siden.');
+      // Fallback to localStorage if API fails
+      const saved = localStorage.getItem('sommerhusBookings');
+      if (saved) {
+        setBookings(JSON.parse(saved));
+      }
+    } finally {
+      setLoadingBookings(false);
     }
-  }, []);
+  };
+
+  const saveBookingToAPI = async (booking) => {
+    try {
+      const response = await fetch(SHEETS_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'create',
+          booking: {
+            id: booking.id,
+            name: booking.name,
+            email: booking.email,
+            guests: booking.guests,
+            startDate: booking.startDate,
+            endDate: booking.endDate,
+            comment: booking.comment,
+            status: booking.status,
+            createdAt: booking.createdAt,
+            flightTicketDeadline: booking.flightTicketDeadline
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Kunne ikke gemme booking');
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Fejl ved gemning af booking:', error);
+      // Fallback to localStorage
+      const existingBookings = JSON.parse(localStorage.getItem('sommerhusBookings') || '[]');
+      localStorage.setItem('sommerhusBookings', JSON.stringify([...existingBookings, booking]));
+      return false;
+    }
+  };
+
+  const deleteBookingFromAPI = async (bookingId) => {
+    try {
+      const response = await fetch(SHEETS_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'delete',
+          bookingId: bookingId
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Kunne ikke slette booking');
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Fejl ved sletning af booking:', error);
+      return false;
+    }
+  };
 
   useEffect(() => {
-    localStorage.setItem('sommerhusBookings', JSON.stringify(bookings));
-  }, [bookings]);
+    loadBookingsFromAPI();
+  }, []);
+
+  // Keep flight ticket images in localStorage only
+  const updateFlightTicketInStorage = (bookingId, imageData) => {
+    const flightTicketData = JSON.parse(localStorage.getItem('flightTicketData') || '{}');
+    flightTicketData[bookingId] = { flightTicketImage: imageData };
+    localStorage.setItem('flightTicketData', JSON.stringify(flightTicketData));
+  };
 
   const sendEmailNotification = async (booking, needsApproval) => {
     if (!emailJsLoaded || !window.emailjs) {
@@ -235,9 +338,17 @@ const SommerhusBooking = () => {
       status: needsApproval ? 'pending' : 'confirmed'
     };
 
-    const emailSent = await sendEmailNotification(newBooking, needsApproval);
+    // Save to API
+    const apiSuccess = await saveBookingToAPI(newBooking);
+    if (apiSuccess) {
+      // Reload bookings from API to ensure consistency
+      await loadBookingsFromAPI();
+    } else {
+      // Fallback: add to local state if API fails
+      setBookings([...bookings, newBooking]);
+    }
 
-    setBookings([...bookings, newBooking]);
+    const emailSent = await sendEmailNotification(newBooking, needsApproval);
     
     setSelectedDates({ start: null, end: null });
     setShowBookingForm(false);
@@ -259,8 +370,12 @@ const SommerhusBooking = () => {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setBookings(bookings.map(b => 
-          b.id === bookingId 
+        // Save flight ticket image to localStorage
+        updateFlightTicketInStorage(bookingId, reader.result);
+
+        // Update local state to reflect the upload
+        setBookings(bookings.map(b =>
+          b.id === bookingId
             ? { ...b, flightTicketUploaded: true, flightTicketImage: reader.result }
             : b
         ));
@@ -331,9 +446,21 @@ const SommerhusBooking = () => {
     alert('Booking afvist og slettet.');
   };
 
-  const deleteBooking = (bookingId) => {
+  const deleteBooking = async (bookingId) => {
     if (window.confirm('Er du sikker på du vil slette denne booking?')) {
-      setBookings(bookings.filter(b => b.id !== bookingId));
+      const apiSuccess = await deleteBookingFromAPI(bookingId);
+      if (apiSuccess) {
+        // Reload bookings from API to ensure consistency
+        await loadBookingsFromAPI();
+      } else {
+        // Fallback: remove from local state if API fails
+        setBookings(bookings.filter(b => b.id !== bookingId));
+      }
+
+      // Also remove flight ticket data from localStorage
+      const flightTicketData = JSON.parse(localStorage.getItem('flightTicketData') || '{}');
+      delete flightTicketData[bookingId];
+      localStorage.setItem('flightTicketData', JSON.stringify(flightTicketData));
     }
   };
 
@@ -491,8 +618,26 @@ const SommerhusBooking = () => {
           }, 'Login')
         )
       ),
-      
-      renderCalendar(),
+
+      // Loading state
+      loadingBookings && React.createElement('div', { className: "bg-white rounded-lg shadow-lg p-6 mb-6 text-center" },
+        React.createElement('p', { className: "text-lg" }, 'Indlæser bookinger...'),
+        React.createElement('div', { className: "animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mt-2" })
+      ),
+
+      // Error state
+      apiError && React.createElement('div', { className: "bg-red-50 border border-red-200 rounded-lg p-4 mb-6" },
+        React.createElement('p', { className: "text-red-700" }, apiError),
+        React.createElement('button', {
+          onClick: () => {
+            setApiError(null);
+            loadBookingsFromAPI();
+          },
+          className: "mt-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+        }, 'Prøv igen')
+      ),
+
+      !loadingBookings && renderCalendar(),
       
       showBookingForm && React.createElement('div', { className: "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" },
         React.createElement('div', { className: "bg-white rounded-lg shadow-xl p-6 max-w-md w-full" },
@@ -659,7 +804,7 @@ const SommerhusBooking = () => {
         )
       ),
       
-      isAdmin && React.createElement('div', { className: "mt-8 bg-white rounded-lg shadow-lg p-6" },
+      !loadingBookings && isAdmin && React.createElement('div', { className: "mt-8 bg-white rounded-lg shadow-lg p-6" },
         React.createElement('h3', { className: "text-2xl font-bold mb-4" }, 'Admin Panel'),
         bookings.filter(b => b.status === 'pending').length > 0 && React.createElement('div', { className: "mb-6" },
           React.createElement('h4', { className: "text-lg font-semibold mb-3 text-orange-600" }, 'Afventer Godkendelse'),
@@ -730,7 +875,7 @@ const SommerhusBooking = () => {
         )
       ),
       
-      React.createElement('div', { className: "mt-8 bg-white rounded-lg shadow-lg p-6" },
+      !loadingBookings && React.createElement('div', { className: "mt-8 bg-white rounded-lg shadow-lg p-6" },
         React.createElement('h3', { className: "text-2xl font-bold mb-4" }, 'Mine Bookinger'),
         bookings.length === 0 ? React.createElement('p', { className: "text-gray-500" }, 'Ingen bookinger endnu. Vælg datoer i kalenderen for at booke.') :
         bookings.map(booking =>

@@ -26,7 +26,10 @@
               message.includes('line-clamp') ||
               message.includes('plugins array') ||
               message.includes('tailwindcss.com') ||
-              message.includes('babeljs.io')) {
+              message.includes('babeljs.io') ||
+              message.includes('cdn.tailwindcss.com') ||
+              message.includes('PostCSS plugin') ||
+              message.includes('Tailwind CLI')) {
             return; // Suppress these warnings
           }
           originalWarn.apply(console, args);
@@ -46,6 +49,6 @@
 </head>
 <body>
     <div id="root"></div>
-    <script type="text/babel" src="app.jsx?v=3"></script>
+    <script type="text/babel" src="app.jsx?v=5"></script>
 </body>
 </html>

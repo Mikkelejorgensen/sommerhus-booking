@@ -29,9 +29,9 @@ const SafeX = (props) => React.createElement(SafeIcon, { iconName: 'X', fallback
 // 3. Create an email template
 // 4. Replace the placeholders below with your actual values
 const EMAIL_CONFIG = {
-  PUBLIC_KEY: 'YOUR_PUBLIC_KEY', // Your EmailJS public key
-  SERVICE_ID: 'YOUR_SERVICE_ID', // Your EmailJS service ID
-  TEMPLATE_ID: 'YOUR_TEMPLATE_ID' // Your EmailJS template ID
+  PUBLIC_KEY: 'rlukR7FM0JsxgkSR4', // Your EmailJS public key
+  SERVICE_ID: 'Fodbold1', // Your EmailJS service ID
+  TEMPLATE_ID: 'template_23hcusa' // Your EmailJS template ID
 };
 
 const SommerhusBooking = () => {

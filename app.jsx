@@ -46,6 +46,7 @@ const SommerhusBooking = () => {
   const [emailJsLoaded, setEmailJsLoaded] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
+    email: '',
     guests: 1,
     comment: ''
   });
@@ -90,32 +91,69 @@ const SommerhusBooking = () => {
       return false;
     }
 
-    const templateParams = {
-      to_name: 'Ulla og Eric',
-      from_name: booking.name,
+    const days = calculateDays(new Date(booking.startDate), new Date(booking.endDate));
+    const bookingStart = new Date(booking.startDate).toLocaleDateString('da-DK');
+    const bookingEnd = new Date(booking.endDate).toLocaleDateString('da-DK');
+
+    // Common template parameters
+    const baseParams = {
       booking_name: booking.name,
       booking_guests: booking.guests,
-      booking_start: new Date(booking.startDate).toLocaleDateString('da-DK'),
-      booking_end: new Date(booking.endDate).toLocaleDateString('da-DK'),
-      booking_days: calculateDays(new Date(booking.startDate), new Date(booking.endDate)),
+      booking_start: bookingStart,
+      booking_end: bookingEnd,
+      booking_days: days,
       booking_comment: booking.comment || 'Ingen kommentar',
-      needs_approval: needsApproval ? 'JA - KRÆVER GODKENDELSE' : 'Nej',
-      message: needsApproval 
-        ? booking.name + ' har anmodet om at booke sommerhuset i ' + calculateDays(new Date(booking.startDate), new Date(booking.endDate)) + ' dage. Denne booking kræver jeres godkendelse da den er over 14 dage.'
-        : booking.name + ' har booket sommerhuset. Bookingen er automatisk bekræftet.'
+      needs_approval: needsApproval ? '⚠️ Afventer godkendelse - bookingen er over 14 dage' : '✅ Automatisk godkendt'
     };
 
+    let emailsSent = 0;
+
     try {
-      const response = await window.emailjs.send(
+      // Send email to Ulla and Eric (owners)
+      const ownerParams = {
+        ...baseParams,
+        to_name: 'Ulla og Eric',
+        to_email: 'ulla.eric@example.com', // Replace with actual email
+        from_name: booking.name,
+        message: needsApproval
+          ? booking.name + ' har anmodet om at booke sommerhuset i ' + days + ' dage. Denne booking kræver jeres godkendelse da den er over 14 dage.'
+          : booking.name + ' har booket sommerhuset. Bookingen er automatisk bekræftet.'
+      };
+
+      const ownerResponse = await window.emailjs.send(
         EMAIL_CONFIG.SERVICE_ID,
         EMAIL_CONFIG.TEMPLATE_ID,
-        templateParams
+        ownerParams
       );
-      console.log('Email sendt succesfuldt!', response.status, response.text);
-      return true;
+      console.log('Email til Ulla og Eric sendt succesfuldt!', ownerResponse.status);
+      emailsSent++;
+
+      // Send email to the booker
+      if (booking.email) {
+        const bookerParams = {
+          ...baseParams,
+          to_name: booking.name,
+          to_email: booking.email,
+          from_name: 'Ulla og Eric',
+          message: needsApproval
+            ? 'Tak for din booking! Din anmodning om at booke sommerhuset i ' + days + ' dage er modtaget og afventer godkendelse fra Ulla og Eric, da bookingen er over 14 dage. Du vil modtage en email når bookingen er godkendt eller afvist.'
+            : 'Tak for din booking! Din booking af sommerhuset er automatisk bekræftet. Husk at uploade flybilletter inden 14 dage.'
+        };
+
+        const bookerResponse = await window.emailjs.send(
+          EMAIL_CONFIG.SERVICE_ID,
+          EMAIL_CONFIG.TEMPLATE_ID,
+          bookerParams
+        );
+        console.log('Email til booker sendt succesfuldt!', bookerResponse.status);
+        emailsSent++;
+      }
+
+      console.log(`${emailsSent} emails sendt succesfuldt!`);
+      return emailsSent > 0;
     } catch (error) {
       console.error('Fejl ved afsendelse af email:', error);
-      return false;
+      return emailsSent > 0;
     }
   };
 
@@ -186,6 +224,7 @@ const SommerhusBooking = () => {
     const newBooking = {
       id: Date.now(),
       name: formData.name,
+      email: formData.email,
       guests: formData.guests,
       comment: formData.comment,
       startDate: selectedDates.start.toISOString(),
@@ -202,7 +241,7 @@ const SommerhusBooking = () => {
     
     setSelectedDates({ start: null, end: null });
     setShowBookingForm(false);
-    setFormData({ name: '', guests: 1, comment: '' });
+    setFormData({ name: '', email: '', guests: 1, comment: '' });
     
     if (emailSent) {
       alert(needsApproval 
@@ -463,7 +502,7 @@ const SommerhusBooking = () => {
               onClick: () => {
                 setShowBookingForm(false);
                 setSelectedDates({ start: null, end: null });
-                setFormData({ name: '', guests: 1, comment: '' });
+                setFormData({ name: '', email: '', guests: 1, comment: '' });
               }
             }, React.createElement(SafeX, { className: "w-6 h-6" }))
           ),
@@ -494,6 +533,16 @@ const SommerhusBooking = () => {
               })
             ),
             React.createElement('div', { className: "mb-4" },
+              React.createElement('label', { className: "block text-sm font-semibold mb-2" }, 'Email'),
+              React.createElement('input', {
+                type: "email",
+                value: formData.email,
+                onChange: (e) => setFormData({ ...formData, email: e.target.value }),
+                className: "w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500",
+                placeholder: "Din email adresse"
+              })
+            ),
+            React.createElement('div', { className: "mb-4" },
               React.createElement('label', { className: "block text-sm font-semibold mb-2" }, 'Antal personer'),
               React.createElement('input', {
                 type: "number",
@@ -518,6 +567,14 @@ const SommerhusBooking = () => {
                 e.preventDefault();
                 if (!formData.name.trim()) {
                   alert('Indtast venligst dit navn');
+                  return;
+                }
+                if (!formData.email.trim()) {
+                  alert('Indtast venligst din email adresse');
+                  return;
+                }
+                if (!/\S+@\S+\.\S+/.test(formData.email)) {
+                  alert('Indtast venligst en gyldig email adresse');
                   return;
                 }
                 handleBooking(e);
